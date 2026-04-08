@@ -1,0 +1,28 @@
+{
+  "name": "style-guide-extraction",
+  "owner": {
+    "name": "jasonadams1326"
+  },
+  "metadata": {
+    "description": "Extract any website's visual style into a reusable design system",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "style-guide-extraction",
+      "source": "./",
+      "description": "Extract a website's visual style into design.html + styleguide.md, then build new UI in that style",
+      "version": "1.0.0",
+      "keywords": [
+        "design",
+        "style-guide",
+        "css",
+        "playwright",
+        "frontend",
+        "ui"
+      ],
+      "category": "productivity",
+      "skills": "./skills/"
+    }
+  ]
+}
