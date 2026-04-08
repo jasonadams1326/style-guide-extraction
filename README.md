@@ -51,8 +51,15 @@ Produces a new `output.html` that faithfully follows the captured style.
 
 ## Requirements
 
-- **Playwright** (for URL capture). The bundled `extract_style.py` uses `uv run` and will install Playwright automatically on first run. You can also skip the URL path entirely and paste HTML/CSS from browser dev tools.
-- **Claude Code** or **GitHub Copilot CLI** — both read the `.claude-plugin/` format.
+**Required:** Claude Code or GitHub Copilot CLI — both read the `.claude-plugin/` format.
+
+**Optional (for URL capture):** [Playwright MCP](https://github.com/microsoft/playwright-mcp) installed as an MCP server in your CLI. This gives the best fidelity and is the only path that handles JavaScript-rendered pages and auth-gated sites (the agent opens a headed browser, you log in, say "ready", and it continues).
+
+**No tooling at all?** The skill still works — it will fall back to either:
+1. **`curl` + raw CSS parsing** (for static sites) — works out of the box on any machine with `curl`, which is everywhere.
+2. **Paste HTML/CSS** from your browser dev tools — works on any page, any state, no install required.
+
+You don't need Python, Node, `uv`, or anything else.
 
 ## What's inside
 
@@ -62,9 +69,7 @@ Produces a new `output.html` that faithfully follows the captured style.
 └── plugin.json           plugin manifest
 skills/
 └── style-guide-extraction/
-    ├── SKILL.md          skill instructions
-    └── scripts/
-        └── extract_style.py   Playwright-based CSS/HTML extractor
+    └── SKILL.md          skill instructions (pure prompt — no code)
 ```
 
 ## License

@@ -30,9 +30,9 @@ If called without a subcommand (`/sge`), briefly explain the three phases and as
 
 **Goal:** Produce a single `design.html` file that faithfully recreates the user's reference website style. This becomes the source of truth for everything that follows.
 
-There are two paths into this phase. **Default to the URL path** unless the user has already pasted HTML/CSS or explicitly says they want to paste it themselves.
+There are three paths into this phase, in preference order. **Default to Path A** (Playwright MCP). If Playwright MCP isn't installed, fall back to Path B (curl + raw CSS parsing — works for static sites). If the site is JS-rendered or behind auth and no MCP is available, use Path C (user pastes HTML/CSS from dev tools).
 
-### Path A: URL → subagent via Playwright MCP (default)
+### Path A: URL → subagent via Playwright MCP (default, if MCP available)
 
 Spawn a **general-purpose subagent** to handle all the browser work. This keeps the raw HTML/CSS noise out of the main conversation context — the subagent digests it and hands back only a compact design brief.
 
@@ -114,19 +114,41 @@ The Playwright MCP browser runs **headed by default** — the user can see it on
 
 The subagent returns the compact design brief (not raw HTML/CSS). The raw files are saved in `./sge-capture/` if you need to verify anything. Use the Read tool to view `./sge-capture/reference.png` as a visual reference.
 
-### Path B: User pastes HTML/CSS + screenshot (fallback)
+### Path B: URL → curl + raw CSS parsing (fallback if no Playwright MCP)
 
-If the user has already extracted HTML/CSS from dev tools themselves, or wants to paste them, use those directly. They might also paste specific CSS values from tools like VisBug ("the bg should be #1a1f36") — apply those literally.
+Use this when Playwright MCP isn't installed but the target site is reasonably static (landing pages, marketing sites, docs). It fails gracefully on heavily JS-rendered apps and can't handle auth.
 
-If they only gave a screenshot and no HTML/CSS, ask for one of:
-- A URL you can capture via Path A
-- The HTML/CSS pasted from dev tools (right-click → Inspect → select `<html>` → Copy outer HTML)
+Steps (run inline in the main conversation — no subagent needed):
 
-Explain briefly that without the HTML/CSS or a URL, you'll be guessing colors, fonts, and spacing from a screenshot — which gives ~70% fidelity.
+1. **Fetch the HTML** with `curl -sL <url>` and save it to `./sge-capture/reference.html`. If output is large, save to a file via Bash and read with offset/limit.
+2. **Find the stylesheets** by grepping for `rel="stylesheet"` and `href=` in the HTML. Most modern sites have a single built CSS file (e.g. Vite/webpack output).
+3. **Fetch each stylesheet** with `curl -sL` and concatenate into `./sge-capture/reference.css`.
+4. **Extract design tokens from the CSS**:
+   - Colors: grep for hex patterns `#[0-9a-fA-F]{3,8}` and count occurrences — the most common ones are the real palette.
+   - Fonts: find `@font-face` declarations and `font-family:` rules for the body and headings.
+   - Tailwind classes: if the site uses Tailwind, the built CSS will have specific classes like `.text-5xl{font-size:3rem;line-height:1}` that map directly to typography tokens.
+   - Border radius, shadows: grep for `rounded-` / `shadow-` / `border-radius:` / `box-shadow:`.
+5. **Find page structure** in the HTML: grep for `<h1`, `<h2`, `<section`, `<nav`, `<footer` to get the section outline and exact heading text.
+6. **Save a screenshot if you can** — if the user has access to any browser tool, ask them to drop a screenshot into `./sge-capture/reference.png`. Otherwise skip it.
+
+This approach captures ~85% of fidelity compared to Playwright MCP — you miss: computed runtime values, lazy-loaded content, post-JS DOM mutations, and anything gated behind auth. But for a static marketing site it's often all you need.
+
+### Path C: User pastes HTML/CSS + screenshot (always works)
+
+If neither MCP nor curl works (JS-rendered SPA with no crawlable HTML, auth-gated site, or the user just wants to paste), ask the user to open dev tools and copy the HTML/CSS themselves.
+
+Ask for:
+- Right-click → Inspect → select `<html>` → Copy outer HTML → paste
+- Optionally the main stylesheet content (from the Sources tab)
+- A screenshot of the page
+
+They might also paste specific CSS values from tools like VisBug ("the bg should be #1a1f36") — apply those literally.
+
+If they only give a screenshot with no HTML/CSS, tell them you'll be guessing colors, fonts, and spacing — roughly ~70% fidelity — and offer to push harder for a URL or pasted CSS.
 
 ### Building `design.html`
 
-With reference material in hand (from either path):
+With reference material in hand (from any path):
 
 1. **Create `design.html`** in the current working directory. It must be a single self-contained HTML file. Apply the **Design Principles** at the bottom of this skill — they govern all HTML you write, in this phase and Phase 3.
 
