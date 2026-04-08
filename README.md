@@ -53,11 +53,9 @@ Produces a new `output.html` that faithfully follows the captured style.
 
 **Required:** Claude Code or GitHub Copilot CLI — both read the `.claude-plugin/` format.
 
-**Optional (for URL capture):** [Playwright MCP](https://github.com/microsoft/playwright-mcp) installed as an MCP server in your CLI. This gives the best fidelity and is the only path that handles JavaScript-rendered pages and auth-gated sites (the agent opens a headed browser, you log in, say "ready", and it continues).
+**Recommended (for URL capture):** [Playwright MCP](https://github.com/microsoft/playwright-mcp) installed as an MCP server in your CLI. This is how the skill captures a page end-to-end: the agent opens a headed browser, you can log in if the site is auth-gated, and it extracts real rendered HTML, CSS, computed styles, and a full-page screenshot. It's also the only path that reliably handles JavaScript-rendered pages, animations, and hover states.
 
-**No tooling at all?** The skill still works — it will fall back to either:
-1. **`curl` + raw CSS parsing** (for static sites) — works out of the box on any machine with `curl`, which is everywhere.
-2. **Paste HTML/CSS** from your browser dev tools — works on any page, any state, no install required.
+**Fallback:** paste HTML/CSS from your browser dev tools (right-click → Inspect → Copy outer HTML, plus the relevant stylesheets). Works on any page with no install required, but you lose runtime details like animations and computed values.
 
 You don't need Python, Node, `uv`, or anything else.
 
